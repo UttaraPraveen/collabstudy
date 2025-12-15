@@ -1,14 +1,27 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { signInWithEmailAndPassword } from "firebase/auth"; 
+import { auth } from "../firebase"; 
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const handleLogin = () => {
-  console.log("Email:", email);
-  console.log("Password:", password);
-};
+  const navigate = useNavigate();
 
-
+  const handleLogin = async () => {
+    try {
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      console.log("Logged in user:", userCredential.user);
+      navigate("/dashboard");
+    } catch (error) {
+      console.error(error); // Good for debugging
+      alert(error.message);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -34,12 +47,11 @@ function Login() {
         />
 
         <button
-        onClick={handleLogin}
-            className="w-full bg-blue-600 text-white p-2 rounded"
-            >
-            Login
+          onClick={handleLogin}
+          className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+        >
+          Login
         </button>
-
       </div>
     </div>
   );
