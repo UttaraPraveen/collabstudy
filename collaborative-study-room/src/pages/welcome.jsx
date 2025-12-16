@@ -6,9 +6,7 @@ function Welcome() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-purple-900 to-purple-500 px-4">
       <div className="w-full max-w-sm text-center">
-        <h2 className="text-5xl text-red-600 font-bold mb-4">
-            TAILWIND TEST
-        </h2>
+        
 
 
         <h1 className="text-white text-3xl font-bold tracking-widest mb-6">
