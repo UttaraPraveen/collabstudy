@@ -18,19 +18,15 @@ function Login() {
   }, [user, navigate]);
 
   const handleLogin = async () => {
-    try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-      console.log("Logged in user:", userCredential.user);
-      navigate("/dashboard");
-    } catch (error) {
-      console.error(error); // Good for debugging
-      alert(error.message);
-    }
-  };
+  try {
+    const res = await signInWithEmailAndPassword(auth, email, password);
+    console.log("SUCCESS:", res.user);
+  } catch (error) {
+    console.log("LOGIN ERROR CODE:", error.code);
+    console.log("LOGIN ERROR MESSAGE:", error.message);
+    alert(error.message);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
