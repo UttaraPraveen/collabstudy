@@ -1,16 +1,19 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Welcome from "./pages/Welcome";     // ✅ NEW
+import Welcome from "./pages/Welcome";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute"; // <--- Import this
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Login />} />
+        {/* Make Welcome the default page at "/" */}
+        <Route path="/" element={<Welcome />} />
         
-        {/* Wrap Dashboard in ProtectedRoute */}
+        {/* Move Login to "/login" */}
+        <Route path="/login" element={<Login />} />
+        
         <Route 
           path="/dashboard" 
           element={
