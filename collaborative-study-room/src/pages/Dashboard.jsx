@@ -11,15 +11,14 @@ import RoomList from "../components/RoomList";
 import TaskManager from "../components/TaskManager";
 import PomodoroTimer from "../components/Pomodoro"; 
 import StudyTracker from "../components/StudyTracker"; 
-import RoomSidebar from "../components/RoomSidebar"; // ✅ 1. IMPORT SIDEBAR
+import RoomSidebar from "../components/RoomSidebar";
 
 function Dashboard() {
   const { user } = useAuth(); 
-  const [displayName, setDisplayName] = useState("Scholar");
+  const [displayName, setDisplayName] = useState("SCHOLAR"); // Default uppercase for retro vibe
   const [selectedRoomId, setSelectedRoomId] = useState(null);
   const navigate = useNavigate(); 
 
-  // --- FETCH USER DATA ---
   useEffect(() => {
     const fetchUserData = async () => {
       if (user?.uid) {
@@ -29,7 +28,8 @@ function Dashboard() {
 
           if (userSnapshot.exists()) {
             const data = userSnapshot.data();
-            setDisplayName(data.fullName || data.username || "Scholar");
+            const name = data.fullName || data.username || "Scholar";
+            setDisplayName(name.toUpperCase()); // Force uppercase for aesthetic
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -50,31 +50,36 @@ function Dashboard() {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    // 1. UPDATED BACKGROUND & FONT (Matching Signup)
+    <div className="min-h-screen bg-gradient-to-b from-[#e879f9] to-[#4c1d95] p-6 font-mono text-white">
+      
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Hi, {displayName} 👋
+          <h1 className="text-4xl font-bold tracking-widest drop-shadow-md">
+            HI, {displayName} 👋
           </h1>
-          <p className="text-gray-500 text-sm">Welcome back to your workspace.</p>
+          <p className="text-purple-200 text-sm mt-1 tracking-wide">
+            WELCOME BACK TO YOUR WORKSPACE.
+          </p>
         </div>
         
         <div className="flex items-center gap-4">
           {selectedRoomId && (
             <button 
               onClick={() => setSelectedRoomId(null)}
-              className="text-sm text-blue-600 underline hover:text-blue-800"
+              className="text-sm text-purple-200 underline hover:text-white transition tracking-wide"
             >
-              ← Back to Room List
+              ← BACK TO ROOM LIST
             </button>
           )}
 
+          {/* 2. UPDATED BUTTON STYLE (Matching Register Button vibe but smaller) */}
           <button 
             onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded shadow-md transition"
+            className="bg-[#1a1a1a] border-2 border-[#f0abfc] text-white px-6 py-2 rounded-full shadow-lg hover:bg-[#d8a4e2] hover:text-black hover:border-[#d8a4e2] transition-all duration-300 font-bold tracking-wider text-sm"
           >
-            Logout
+            LOGOUT
           </button>
         </div>
       </div>
@@ -82,32 +87,48 @@ function Dashboard() {
       {/* DASHBOARD CONTENT */}
       {selectedRoomId ? (
         // --- INSIDE A ROOM VIEW ---
-        // ✅ 2. Changed Grid to 4 Columns (3 for Tasks, 1 for Sidebar)
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           
-          {/* Main Content Area */}
+          {/* Main Content Area (Tasks) */}
           <div className="lg:col-span-3">
             <TaskManager roomId={selectedRoomId} />
           </div>
 
           {/* Right Sidebar Area */}
           <div className="lg:col-span-1 space-y-6">
-            {/* ✅ 3. Added RoomSidebar here */}
-            <RoomSidebar roomId={selectedRoomId} />
+            
+            {/* Timer at the TOP */}
             <PomodoroTimer roomId={selectedRoomId} />
+            
+            {/* Sidebar BELOW */}
+            <RoomSidebar roomId={selectedRoomId} />
+            
           </div>
 
         </div>
       ) : (
         // --- MAIN DASHBOARD VIEW ---
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+          
+          {/* Left Column */}
+          <div className="space-y-6">
             <StudyTracker />
-            <div className="grid grid-cols-1 gap-6 mt-6">
-              <CreateRoom />
-              <JoinRoom />
+            
+            {/* 3. WRAPPER FOR CREATE/JOIN TO LOOK LIKE A 'SECTION' */}
+            <div className="bg-white/10 border-2 border-white/20 p-6 rounded-xl backdrop-blur-sm">
+              <h2 className="text-xl font-bold mb-4 tracking-widest text-[#f0abfc]">
+                ROOM CONTROLS
+              </h2>
+              <div className="space-y-6">
+                <CreateRoom />
+                <div className="border-t border-white/10 pt-6">
+                   <JoinRoom />
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Right Column */}
           <div>
             <RoomList onSelectRoom={setSelectedRoomId} />
           </div>
