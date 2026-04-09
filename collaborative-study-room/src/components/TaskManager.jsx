@@ -22,8 +22,7 @@ function TaskManager({ roomId }) {
     if (!roomId) return;
     const taskRef = collection(db, "rooms", roomId, "tasks");
     
-    // FIX: Simplified query. Only order by 'createdAt' to avoid Firestore Index errors.
-    // If you need complex sorting, you must create an index in Firebase Console.
+    // Ordered by creation time to keep new tasks at the bottom
     const q = query(taskRef, orderBy("createdAt", "asc"));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -39,7 +38,7 @@ function TaskManager({ roomId }) {
     try {
       await addDoc(collection(db, "rooms", roomId, "tasks"), {
         title: taskTitle,
-        deadline: deadline || "No Date", // Ensure string is never null
+        deadline: deadline || "No Date", 
         createdBy: user.uid,
         completed: false,
         createdAt: serverTimestamp(),
@@ -58,60 +57,64 @@ function TaskManager({ roomId }) {
   };
 
   return (
-    <div className="bg-white/90 backdrop-blur-md rounded-[2rem] shadow-xl border border-purple-50 p-8 h-full flex flex-col transition-all duration-500">
+    <div className="bg-[#fdfaff] rounded-[2.5rem] shadow-2xl border border-purple-50 p-8 h-full flex flex-col transition-all duration-500">
+      
+      {/* HEADER SECTION */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-800 tracking-tight">Room Tasks</h2>
-          <p className="text-slate-400 text-sm font-medium">Keep track of group goals</p>
+          <h2 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+            Room Tasks
+          </h2>
+          <p className="text-[#a78bfa] text-xs font-black tracking-widest uppercase mt-1">Keep track of group goals</p>
         </div>
-        <div className="h-10 w-10 rounded-full bg-indigo-50 flex items-center justify-center">
-          <span className="text-indigo-600 font-bold text-sm">{tasks.length}</span>
+        <div className="h-8 w-8 rounded-full bg-white flex items-center justify-center shadow-sm border border-purple-100">
+          <span className="text-purple-600 font-black text-[10px]">{tasks.length}</span>
         </div>
       </div>
 
-      {/* Input Section */}
-      <div className="space-y-3 mb-8 p-6 bg-slate-50/50 rounded-3xl border border-slate-100">
-        <div className="flex flex-col lg:flex-row gap-3">
-          <input
-            placeholder="What needs to be done?"
-            value={taskTitle}
-            onChange={(e) => setTaskTitle(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addTask()}
-            className="flex-grow p-4 rounded-2xl border-2 border-transparent focus:border-purple-400 focus:bg-white outline-none transition-all font-semibold text-slate-700 placeholder:text-slate-300"
-          />
+      {/* INPUT SECTION */}
+      <div className="mb-6 p-4 bg-white rounded-[2rem] border border-purple-50 shadow-inner flex flex-col lg:flex-row gap-3 items-center">
+        <input
+          placeholder="What needs to be done?"
+          value={taskTitle}
+          onChange={(e) => setTaskTitle(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && addTask()}
+          className="flex-grow p-4 bg-transparent outline-none font-bold text-slate-700 placeholder:text-slate-300 placeholder:font-black w-full"
+        />
+        <div className="flex items-center gap-3 w-full lg:w-auto">
           <input
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="p-4 rounded-2xl border-2 border-transparent focus:border-purple-400 focus:bg-white outline-none transition-all font-bold text-slate-600 text-sm cursor-pointer"
+            className="p-3 bg-transparent outline-none font-black text-slate-500 text-[10px] tracking-widest uppercase cursor-pointer"
           />
           <button
             onClick={addTask}
-            className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="bg-[#8b5cf6] hover:bg-[#7c3aed] text-white px-8 py-4 rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-purple-200 transition active:scale-95 w-full lg:w-auto"
           >
             Add
           </button>
         </div>
       </div>
 
-      {/* Task List */}
-      <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2 custom-scrollbar">
+      {/* FIXED: SCROLLABLE TASK LIST SECTION (max height strictly set) */}
+      <div className="flex-grow overflow-y-auto max-h-[170px] pr-2 custom-scrollbar space-y-3">
         {tasks.map((task) => (
           <div
             key={task.id}
             onClick={() => toggleTask(task.id, task.completed)}
-            className={`group flex items-center justify-between p-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 ${
+            className={`group flex items-center justify-between p-5 rounded-3xl cursor-pointer transition-all duration-300 border border-transparent ${
               task.completed
-                ? "bg-slate-50 border-transparent"
-                : "bg-white border-slate-50 hover:border-purple-100 hover:shadow-md"
+                ? "bg-slate-50 opacity-60"
+                : "bg-white shadow-md hover:border-purple-200 hover:shadow-lg hover:-translate-y-0.5"
             }`}
           >
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-5">
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-500 ${
+                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
                   task.completed
-                    ? "bg-emerald-500 border-emerald-500 shadow-lg shadow-emerald-100"
-                    : "border-slate-200 group-hover:border-purple-400"
+                    ? "bg-purple-500 border-purple-500"
+                    : "border-[#d8b4fe] group-hover:border-purple-400"
                 }`}
               >
                 {task.completed && (
@@ -122,11 +125,11 @@ function TaskManager({ roomId }) {
               </div>
 
               <div>
-                <p className={`font-bold transition-all duration-300 ${task.completed ? "line-through text-slate-400" : "text-slate-700"}`}>
+                <p className={`font-black text-sm transition-all duration-300 tracking-wide ${task.completed ? "line-through text-slate-400" : "text-slate-700"}`}>
                   {task.title}
                 </p>
-                <div className="flex items-center gap-2 mt-1">
-                  <p className={`text-[11px] font-bold ${task.completed ? "text-slate-300" : "text-purple-500"}`}>
+                <div className="flex items-center mt-1">
+                  <p className={`text-[9px] font-black tracking-widest uppercase ${task.completed ? "text-slate-300" : "text-[#a78bfa]"}`}>
                     {task.deadline}
                   </p>
                 </div>
@@ -134,7 +137,13 @@ function TaskManager({ roomId }) {
             </div>
           </div>
         ))}
+        {tasks.length === 0 && (
+          <div className="h-full flex items-center justify-center text-[10px] font-black tracking-[0.3em] uppercase text-slate-300 py-10">
+            No tasks yet. Group goals go here!
+          </div>
+        )}
       </div>
+      
     </div>
   );
 }

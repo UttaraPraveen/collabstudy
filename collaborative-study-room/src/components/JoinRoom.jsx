@@ -4,68 +4,98 @@ import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
 
 function JoinRoom() {
-  const [roomId, setRoomId] = useState("");
+  const [roomInput, setRoomInput] = useState("");
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
 
-  const handleJoinRoom = async () => {
-    if (!roomId) return alert("Please enter a Room Code");
+  const handleJoinRoom = async (e) => {
+    if (e) e.preventDefault();
+    
+    const cleanCode = roomInput.trim().toUpperCase();
+    if (!cleanCode || cleanCode.length < 6) {
+      return alert("Please enter a valid 6-character Room Code");
+    }
+
     setLoading(true);
 
     try {
-      const cleanCode = roomId.trim();
-      
-      // 1. Search for the short code in the database
-      const q = query(collection(db, "rooms"), where("code", "==", cleanCode.toUpperCase()));
-      const snapshot = await getDocs(q);
-
+      const roomsRef = collection(db, "rooms");
       let targetRoomId = null;
+      let roomName = "";
+
+      // 1. Check for 'roomCode' field first
+      let q = query(roomsRef, where("roomCode", "==", cleanCode));
+      let snapshot = await getDocs(q);
+
+      // 2. If not found, check 'code' field (for compatibility)
+      if (snapshot.empty) {
+        q = query(roomsRef, where("code", "==", cleanCode));
+        snapshot = await getDocs(q);
+      }
 
       if (!snapshot.empty) {
-        // Found a room with this short code
-        targetRoomId = snapshot.docs[0].id;
+        // Found the room!
+        const docSnap = snapshot.docs[0];
+        targetRoomId = docSnap.id;
+        roomName = docSnap.data().name;
+
+        // Check if user is already in the room to avoid unnecessary writes
+        if (docSnap.data().members?.includes(user.uid)) {
+          alert("You are already a member of this room!");
+          setLoading(false);
+          return;
+        }
       } else {
-        // Fallback: Try to use the input as a long document ID (for older rooms)
+        // Fallback: If the user entered a direct Document ID
         targetRoomId = cleanCode;
       }
 
-      // 2. Update the members array of the found room
+      // 3. Add the user to the members array
       const roomRef = doc(db, "rooms", targetRoomId);
       await updateDoc(roomRef, {
         members: arrayUnion(user.uid),
       });
       
-      alert("Successfully joined the room!");
-      setRoomId("");
+      alert(`Successfully joined: ${roomName || "New Room"}`);
+      setRoomInput(""); // Clear input on success
+      
     } catch (error) {
-      console.error(error);
-      alert("Invalid Room Code. Please check and try again.");
+      console.error("Join Error:", error);
+      alert("Invalid Room Code or ID. Please check and try again.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="mb-6 bg-white/10 p-4 rounded-lg shadow-sm border border-white/20">
-      <h2 className="text-lg font-bold text-white mb-2">Have a Code?</h2>
-      <p className="text-xs text-purple-200 mb-3">
+    <div className="bg-white/5 border border-white/10 p-6 rounded-[2rem] shadow-2xl w-full">
+      <h3 className="text-white font-black uppercase tracking-[0.2em] text-sm mb-2">
+        Have a Code?
+      </h3>
+      <p className="text-[10px] text-purple-200/50 mb-5 uppercase font-bold tracking-widest">
         Enter the 6-character Room Code to join.
       </p>
       
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-4">
         <input
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
-          placeholder="e.g. HX92KP"
-          className="border border-white/20 bg-white/10 text-white placeholder-purple-200 p-2 rounded flex-grow focus:outline-none focus:border-purple-300 font-mono text-sm uppercase"
-          maxLength={6}
+          type="text"
+          value={roomInput}
+          onChange={(e) => setRoomInput(e.target.value)}
+          placeholder="E.G. HX92KP"
+          maxLength={20} // Allow longer for direct ID fallback, but 6 is standard
+          className="w-full bg-white/5 border border-white/10 text-white placeholder-white/10 p-4 rounded-2xl focus:outline-none focus:border-emerald-400/50 font-mono text-sm uppercase tracking-[0.3em] transition-all"
         />
+        
         <button
           onClick={handleJoinRoom}
           disabled={loading}
-          className="bg-emerald-500 hover:bg-emerald-400 text-white px-4 py-2 rounded font-semibold transition whitespace-nowrap"
+          className={`w-full py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all shadow-xl active:scale-95 ${
+            loading 
+            ? "bg-white/10 text-white/20 cursor-wait" 
+            : "bg-emerald-500 hover:bg-emerald-400 text-white shadow-emerald-500/20"
+          }`}
         >
-          {loading ? "Joining..." : "Join Room"}
+          {loading ? "SEARCHING..." : "Join Room"}
         </button>
       </div>
     </div>

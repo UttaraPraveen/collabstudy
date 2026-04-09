@@ -31,8 +31,8 @@ function PomodoroTimer({ roomId }) {
 
   const saveSession = async () => {
     try {
-      await addDoc(collection(db, "users", user.uid, "studySessions"), {
-        duration: 25,
+if (!user?.uid) return;  
+await addDoc(collection(db, "users", user.uid, "studySessions"), {        duration: 25,
         type: "pomodoro",
         roomId: roomId || "personal",
         createdAt: serverTimestamp(),
@@ -183,8 +183,7 @@ function PomodoroTimer({ roomId }) {
               <div
                 className={`h-full transition-all duration-700 ${isBreak ? 'bg-white' : 'bg-purple-500'}`}
                 style={{
-                  width: `${(cyclesCompleted / cyclesTotal) * 100}%`,
-                }}
+width: `${cyclesTotal ? (cyclesCompleted / cyclesTotal) * 100 : 0}%`,                }}
               />
             </div>
             <p className="text-[10px] font-bold uppercase tracking-widest mt-3 opacity-60">Session Progress</p>
