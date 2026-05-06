@@ -2,8 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Collaboration from '@tiptap/extension-collaboration';
-import { Plugin, PluginKey } from 'prosemirror-state';
-import { Decoration, DecorationSet } from 'prosemirror-view';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import * as Y from 'yjs';
 import {
   ySyncPluginKey,

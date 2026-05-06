@@ -1,7 +1,7 @@
 // utils/contentModeration.js
 // Claude-powered content moderation + YouTube summarization
 
-const ANTHROPIC_API = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_API = "/api.anthropic.com/v1/messages";
 const MODEL = "claude-3-5-sonnet-20240620"; // FIXED: Valid Claude model
 
 // FIXED: Added required headers helper for Anthropic API
@@ -326,33 +326,51 @@ Respond ONLY with valid JSON:
 // YOUTUBE SUMMARIZER
 // ─────────────────────────────────────────────────────────────
 
-export async function summarizeYoutubeVideo({ title, channel, url, subject = "" }) {
-  const prompt = `You are a study assistant for CLOCKEDIN, a university study app for Indian students.
+// utils/contentModeration.js
 
-A student shared this educational YouTube video in their study room:
+// ... (keep the rest of your existing contentModeration.js code at the top)
+
+// ─────────────────────────────────────────────────────────────
+// YOUTUBE UNIFIED CHECKER & SUMMARIZER
+// ─────────────────────────────────────────────────────────────
+
+export async function analyzeYoutubeContent(url, title, channel, subject = "") {
+  const prompt = `You are a strict content moderator and study assistant for CLOCKEDIN, a university study app.
+
+A student wants to add this YouTube video to their study room's resource library:
 Title: "${title}"
 Channel: "${channel}"
 URL: ${url}
 Room subject: ${subject || "General"}
 
-Generate a concise study summary to help students decide whether to watch and what to focus on.
+First, determine if this video is genuinely educational or study-related. 
+ALLOW: Lectures, tutorials, documentaries, academic concepts, coding, exam prep, science.
+BLOCK: Music videos, movies, gaming let's plays, entertainment vlogs, pranks, sports highlights.
 
-Respond ONLY with valid JSON:
+If it is NOT study-related, set "isStudyRelated" to false and provide a short "reason" why it was blocked. You can leave the summary fields empty.
+
+If it IS study-related, set "isStudyRelated" to true, "reason" to "", and generate a concise study summary to help students.
+
+Respond ONLY with valid JSON matching this exact structure:
 {
-  "overview": "2-3 sentences describing what this video covers and who it's for",
-  "keyPoints": ["concept 1", "concept 2", "concept 3"],
-  "noteTip": "one specific tip for taking notes on this type of content",
-  "estimatedLevel": "Beginner | Intermediate | Advanced",
-  "studyRelevance": "High | Medium | Low"
+  "isStudyRelated": boolean,
+  "reason": "Short explanation if rejected, else empty string",
+  "summary": {
+    "overview": "2-3 sentences describing what this video covers and who it's for",
+    "keyPoints": ["concept 1", "concept 2", "concept 3"],
+    "noteTip": "One specific tip for taking notes on this type of content",
+    "estimatedLevel": "Beginner" | "Intermediate" | "Advanced",
+    "studyRelevance": "High" | "Medium" | "Low"
+  }
 }`;
 
   try {
     const res = await fetch(ANTHROPIC_API, {
       method: "POST",
-      headers: getAnthropicHeaders(), // FIXED: Uses API Key
+      headers: getAnthropicHeaders(),
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 500,
+        max_tokens: 600, // Slightly higher to accommodate the combined output
         messages: [{ role: "user", content: prompt }],
       }),
     });
@@ -364,7 +382,18 @@ Respond ONLY with valid JSON:
     const clean = text.replace(/```json|```/g, "").trim();
     return JSON.parse(clean);
   } catch (err) {
-    console.error("Summarization failed:", err);
-    return null;
+    console.error("YouTube Analysis failed:", err);
+    // Fail open if the API drops, so students aren't blocked by network issues.
+    return {
+      isStudyRelated: true,
+      reason: "",
+      summary: {
+        overview: "AI summary temporarily unavailable due to a network error. Host can remove this video if inappropriate.",
+        keyPoints: [],
+        noteTip: "Verify the video content manually.",
+        estimatedLevel: "Beginner",
+        studyRelevance: "Medium"
+      }
+    };
   }
 }
