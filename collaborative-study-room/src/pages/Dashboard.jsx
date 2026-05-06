@@ -20,12 +20,17 @@ import RoomResources from "../components/RoomResources";
 import UniversalLibrary from "../components/UniversalLibrary";
 import EncryptedChat from "../components/EncryptedChat";
 import AmbientSoundscape from "../components/AmbientSoundscape";
+import RoomKeycardTransition from "../components/RoomKeycardTransition"; 
 
 function Dashboard() {
   const { user } = useAuth(); 
   const navigate = useNavigate(); 
   const [displayName, setDisplayName] = useState("SCHOLAR");
   const [selectedRoomId, setSelectedRoomId] = useState(null);
+  
+  // NEW: State to hold room data while the animation plays
+  const [pendingRoom, setPendingRoom] = useState(null);
+
   const [isFlowActive, setIsFlowActive] = useState("focus");
   const [activeDeck, setActiveDeck] = useState(null); 
   const [currentRoomName, setCurrentRoomName] = useState("");
@@ -72,15 +77,13 @@ function Dashboard() {
     }
   }, [user]);
 
+  // FIXED: enterRoom now triggers the pending state for the animation
   const enterRoom = async (roomId) => {
     const roomDoc = await getDoc(doc(db, "rooms", roomId));
     if (roomDoc.exists()) {
       const data = roomDoc.data();
-      setCurrentRoomName(data.name || "STUDY ROOM");
-      setCurrentRoomCode(data.code || data.roomCode || roomId);
-      setCurrentRoomHostId(data.createdBy);
+      setPendingRoom({ roomId, ...data });
     }
-    setSelectedRoomId(roomId);
   };
 
   const handleLogout = async () => { await signOut(auth); navigate("/login"); };
@@ -177,14 +180,14 @@ function Dashboard() {
         {selectedRoomId ? (
           <div className="grid grid-cols-12 gap-4 sm:gap-6 items-stretch animate-in fade-in slide-in-from-bottom duration-700">
             
-            {/* FIXED: VIDEO ROOM set to span-6 */}
+            {/* VIDEO ROOM */}
             <div className="col-span-12 lg:col-span-6 h-[350px] lg:h-[450px]">
               <div className="bg-[#1a1b4b]/80 backdrop-blur-md rounded-3xl lg:rounded-[2.5rem] p-1 border border-white/10 shadow-2xl h-full">
                 <VideoRoom roomId={selectedRoomId} />
               </div>
             </div>
 
-            {/* FIXED: STUDY DECKS set to span-3 */}
+            {/* STUDY DECKS */}
             <div className="col-span-12 lg:col-span-3 h-[400px] lg:h-[450px]">
               <div className="bg-[#fcf8fa] backdrop-blur-md rounded-3xl lg:rounded-[2.5rem] p-4 sm:p-5 border border-white/20 shadow-inner flex flex-col w-full h-full">
                 {activeDeck ? (
@@ -197,7 +200,7 @@ function Dashboard() {
               </div>
             </div>
 
-            {/* FOCUS TIMER (span-3) */}
+            {/* FOCUS TIMER */}
             <div className="col-span-12 lg:col-span-3">
               <div className="bg-white rounded-3xl lg:rounded-[2.5rem] p-5 sm:p-8 shadow-xl border border-purple-100 text-slate-800 h-full">
                 <PomodoroTimer roomId={selectedRoomId} onRunningChange={setIsFlowActive} />
@@ -452,6 +455,21 @@ function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* NEW: KEYCARD TRANSITION OVERLAY */}
+      {pendingRoom && (
+        <RoomKeycardTransition 
+          room={pendingRoom}
+          onComplete={() => {
+            setCurrentRoomName(pendingRoom.name || "STUDY ROOM");
+            setCurrentRoomCode(pendingRoom.code || pendingRoom.roomCode || pendingRoom.roomId);
+            setCurrentRoomHostId(pendingRoom.createdBy);
+            setSelectedRoomId(pendingRoom.roomId);
+            
+            setPendingRoom(null);
+          }}
+        />
       )}
 
     </div>
