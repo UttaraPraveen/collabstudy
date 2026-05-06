@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
 import { useMemo, useState, useEffect } from 'react';
 import { useEditor, EditorContent, Extension } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -245,15 +243,15 @@ const MenuBar = ({ editor }) => {
 
   const getBtnClass = (name, attributes = {}) => {
     const active = editor.isActive(name, attributes);
-    return `px-4 py-2 rounded-xl text-[10px] font-black tracking-widest uppercase transition-all duration-200 border ${
-      active 
-        ? "bg-purple-600 text-white border-purple-600 shadow-lg scale-95" 
-        : "bg-slate-50 text-slate-400 border-slate-100 hover:bg-purple-50 hover:text-purple-600"
+    return `px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+      active
+        ? "bg-purple-600 text-white border-purple-600 shadow-md"
+        : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-purple-100 hover:text-purple-600"
     }`;
   };
 
   return (
-    <div className="flex flex-wrap gap-2 p-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+    <div className="flex flex-wrap gap-2 p-3 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10">
       <button onClick={() => editor.chain().focus().toggleBold().run()} className={getBtnClass("bold")}>B</button>
       <button onClick={() => editor.chain().focus().toggleItalic().run()} className={getBtnClass("italic")}>I</button>
       <button onClick={() => editor.chain().focus().toggleStrike().run()} className={getBtnClass("strike")}>S</button>
@@ -266,25 +264,10 @@ const MenuBar = ({ editor }) => {
       
       <button 
         onClick={() => editor.chain().focus().clearContent(true).run()} 
-        className="ml-auto px-4 py-2 rounded-xl text-[10px] font-black text-rose-500 hover:bg-rose-50 tracking-widest uppercase"
+        className="ml-auto px-4 py-1.5 rounded-lg text-xs font-bold text-rose-500 hover:bg-rose-50 transition-all border border-transparent hover:border-rose-100 uppercase tracking-widest"
       >
         Clear
       </button>
-  const btnClass = (active) =>
-    `px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-      active
-        ? 'bg-purple-600 text-white shadow-md'
-        : 'bg-slate-100 text-slate-600 hover:bg-purple-100 hover:text-purple-600'
-    }`;
-  return (
-    <div className="flex flex-wrap gap-2 p-3 border-b border-slate-100 bg-slate-50/50">
-      <button onClick={() => editor.chain().focus().toggleBold().run()}       className={btnClass(editor.isActive('bold'))}>B</button>
-      <button onClick={() => editor.chain().focus().toggleItalic().run()}     className={btnClass(editor.isActive('italic'))}>I</button>
-      <button onClick={() => editor.chain().focus().toggleStrike().run()}     className={btnClass(editor.isActive('strike'))}>S</button>
-      <div className="w-px h-6 bg-slate-200 mx-1" />
-      <button onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} className={btnClass(editor.isActive('heading', { level: 1 }))}>H1</button>
-      <button onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} className={btnClass(editor.isActive('heading', { level: 2 }))}>H2</button>
-      <button onClick={() => editor.chain().focus().toggleBulletList().run()} className={btnClass(editor.isActive('bulletList'))}>List</button>
     </div>
   );
 };
@@ -292,6 +275,7 @@ const MenuBar = ({ editor }) => {
 // Coloured name pills showing who's currently in the editor
 function ActiveUsers({ awareness }) {
   const [users, setUsers] = useState([]);
+  
   useEffect(() => {
     if (!awareness) return;
     const update = () => {
@@ -322,22 +306,23 @@ function ActiveUsers({ awareness }) {
 
 // ── Inner editor — mounts only once ydoc + awareness are ready ────────────────
 function EditorInner({ ydoc, awareness }) {
-  const cursorExtension = useMemo(() => buildCursorExtension(awareness), []);
+  // Add awareness to the dependency array to prevent stale closures
+  const cursorExtension = useMemo(() => buildCursorExtension(awareness), [awareness]);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ history: false }),
       ydoc ? Collaboration.configure({ document: ydoc }) : null,
+      cursorExtension,
     ].filter(Boolean),
-      Collaboration.configure({ document: ydoc }), // priority 1000 — ySyncPlugin registered first
-      cursorExtension,                              // priority 900  — cursor plugin registered after
-    ],
     editorProps: {
       attributes: {
         class: 'prose prose-purple max-w-none focus:outline-none min-h-[400px] px-8 py-6 text-slate-700 leading-relaxed outline-none',
       },
     },
-  }, [ydoc]); 
+  }, [ydoc, cursorExtension]); 
+
+  useCursorSync(editor, awareness, ydoc);
 
   if (!ydoc || !editor) {
     return (
@@ -349,20 +334,6 @@ function EditorInner({ ydoc, awareness }) {
       </div>
     );
   }
-
-  return (
-    <div className="bg-white rounded-[2.5rem] shadow-2xl border border-purple-50 overflow-hidden flex flex-col h-full min-h-[500px]">
-      <div className="px-8 py-6 border-b border-slate-50 flex justify-between items-center bg-white">
-        <div>
-          <h2 className="text-xl font-black text-slate-800 tracking-tight uppercase italic">Shared Notes</h2>
-          <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.4em] mt-1">Synced via Firestore</p>
-        </div>
-        <div className="flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full border border-blue-100">
-            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Active</span>
-  });
-
-  useCursorSync(editor, awareness, ydoc);
 
   return (
     <div className="bg-white rounded-[2rem] shadow-xl border border-purple-50 overflow-hidden flex flex-col h-full min-h-[500px]">
@@ -392,7 +363,7 @@ function EditorInner({ ydoc, awareness }) {
         .ProseMirror h2 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; color: #1e293b; }
         .ProseMirror ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
         .ProseMirror li { margin-bottom: 0.25em; color: #334155; }
-      `}`</style>
+      `}</style>
     </div>
   );
 }
