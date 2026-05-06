@@ -6,6 +6,7 @@ import {
   serverTimestamp,
   doc,
   updateDoc,
+  deleteDoc, // Added deleteDoc import
   query,
   orderBy,
 } from "firebase/firestore";
@@ -56,6 +57,17 @@ function TaskManager({ roomId }) {
     await updateDoc(taskRef, { completed: !currentStatus });
   };
 
+  // NEW: Delete task function
+  const deleteTask = async (taskId, e) => {
+    e.stopPropagation(); // Prevents the toggleTask click event from firing
+    try {
+      await deleteDoc(doc(db, "rooms", roomId, "tasks", taskId));
+    } catch (err) {
+      console.error("Failed to delete task:", err);
+      alert("Failed to delete task");
+    }
+  };
+
   return (
     <div className="bg-[#fdfaff] rounded-[2.5rem] shadow-2xl border border-purple-50 p-8 h-full flex flex-col transition-all duration-500">
       
@@ -97,7 +109,7 @@ function TaskManager({ roomId }) {
         </div>
       </div>
 
-      {/* FIXED: SCROLLABLE TASK LIST SECTION (max height strictly set) */}
+      {/* SCROLLABLE TASK LIST SECTION */}
       <div className="flex-grow overflow-y-auto max-h-[170px] pr-2 custom-scrollbar space-y-3">
         {tasks.map((task) => (
           <div
@@ -135,6 +147,18 @@ function TaskManager({ roomId }) {
                 </div>
               </div>
             </div>
+
+            {/* NEW: Delete Button (Reveals on Hover) */}
+            <button
+              onClick={(e) => deleteTask(task.id, e)}
+              className="opacity-0 group-hover:opacity-100 p-2 text-rose-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all duration-200"
+              title="Delete Task"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+            
           </div>
         ))}
         {tasks.length === 0 && (
